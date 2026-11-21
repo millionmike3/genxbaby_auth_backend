@@ -15,7 +15,6 @@ export class JwtAuthGuard implements CanActivate {
 
   canActivate(context: ExecutionContext): boolean {
     const request = context.switchToHttp().getRequest();
-
     const header = request.headers.authorization;
 
     if (!header?.startsWith("Bearer ")) {
@@ -25,14 +24,17 @@ export class JwtAuthGuard implements CanActivate {
     const token = header.substring(7);
 
     try {
-      const payload = jwt.verify(
-        token,
-        this.config.getOrThrow<string>("JWT_ACCESS_SECRET"),
-        {
-          issuer: this.config.get<string>("JWT_ISSUER"),
-          audience: this.config.get<string>("JWT_AUDIENCE")
-        }
-      ) as jwt.JwtPayload & {
+      const secret = this.config.getOrThrow<string>("JWT_SECRET");
+
+      if (secret.length < 32) {
+        throw new Error("JWT_SECRET must contain at least 32 characters");
+      }
+
+      const payload = jwt.verify(token, secret, {
+        algorithms: ["HS256"],
+        issuer: this.config.get<string>("JWT_ISSUER") || "genxbaby-auth",
+        audience: this.config.get<string>("JWT_AUDIENCE") || "genxbaby-frontend"
+      }) as jwt.JwtPayload & {
         role: UserRole;
         typ: string;
       };

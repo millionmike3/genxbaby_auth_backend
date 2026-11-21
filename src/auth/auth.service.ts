@@ -28,12 +28,10 @@ export class AuthService {
   ) {}
 
   private get accessSecret(): string {
-    const secret = this.config.getOrThrow<string>(
-      "JWT_ACCESS_SECRET"
-    );
+    const secret = this.config.getOrThrow<string>("JWT_SECRET");
 
     if (secret.length < 32) {
-      throw new Error("JWT_ACCESS_SECRET must contain at least 32 characters");
+      throw new Error("JWT_SECRET must contain at least 32 characters");
     }
 
     return secret;
@@ -54,6 +52,7 @@ export class AuthService {
       },
       this.accessSecret,
       {
+        algorithm: "HS256",
         subject: String(userId),
         expiresIn: (this.config.get<string>("JWT_ACCESS_TTL") || "15m") as jwt.SignOptions["expiresIn"],
         issuer: this.config.get<string>("JWT_ISSUER") || "genxbaby-auth",
